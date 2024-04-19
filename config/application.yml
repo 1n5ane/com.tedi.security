@@ -1,7 +1,0 @@
-server:
-  port: 10000
-
-spring:
-  security:
-    user:
-      password: secret-pass-phrase
