@@ -1,11 +1,9 @@
 package com.tedi.security.configuration
 
-import com.tedi.security.configuration.properties.SecurityConfigProperties
 import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Primary
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.Customizer
@@ -13,12 +11,8 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer
-import org.springframework.security.core.userdetails.User
-import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.security.provisioning.InMemoryUserDetailsManager
 import org.springframework.security.web.SecurityFilterChain
 
 import javax.sql.DataSource
@@ -29,21 +23,16 @@ import javax.sql.DataSource
 class AuthorizationServerConfiguration {
 
     @Autowired
-    SecurityConfigProperties securityConfigProperties
-
-    @Autowired
     DataSource dataSource
-
-    @PostConstruct
-    def test(){
-        def h
-    }
 
     @Bean
     @Autowired
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            AuthenticationProvider authenticationProvider) throws Exception {
         http
+//        CSRF DISABLED FOR DEVELOPMENT PURPOSES
+//        TODO: enable
+                .csrf().disable()
                 .authorizeHttpRequests((auth) -> auth
 //                permit all only on login/logout/register
                         .requestMatchers("/api/v1/auth/**").fullyAuthenticated()
@@ -53,6 +42,8 @@ class AuthorizationServerConfiguration {
 //                TODO: - implement JwtAuthenticationFiler utilizing corespondent JwtService(extends OncePerRequest....)
 //                .addFilterBefore(jwtAuthenticationFilter,
 //                                 UsernamePasswordAuthenticationFilter.class)
+//              FORM LOGIN WILL NOT EXIST IN THE AUTHSERVER
+//              TODO: login page will be implemented on resource server
                 .formLogin (Customizer.withDefaults())
                 .httpBasic(Customizer.withDefaults())
         return http.build();
@@ -64,12 +55,12 @@ class AuthorizationServerConfiguration {
                 .dataSource(dataSource)
                 .passwordEncoder(passwordEncoder)
                 .rolePrefix("ROLE_")
-
-        auth.inMemoryAuthentication()
-                .passwordEncoder(passwordEncoder)
-                .withUser(securityConfigProperties.username)
-                .password(passwordEncoder.encode(securityConfigProperties.password))
-                .roles("ADMIN")
+                .usersByUsernameQuery("select username,password,not coalesce(locked,false) as enabled from users where username = ?")
+                .authoritiesByUsernameQuery("select u.username,r.name as authority\n" +
+                        "from many_users_has_many_roles muhmr\n" +
+                        "inner join public.users u on u.id = muhmr.id_users\n" +
+                        "inner join public.roles r on muhmr.id_roles = r.id\n" +
+                        "where username=?")
     }
 
     @Bean

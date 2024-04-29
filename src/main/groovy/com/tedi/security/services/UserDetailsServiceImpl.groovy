@@ -1,5 +1,6 @@
 package com.tedi.security.services
 
+
 import com.tedi.security.domains.User
 import com.tedi.security.repositories.RoleRepository
 import com.tedi.security.repositories.UserRepository
@@ -13,6 +14,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 
 @Service("userDetailsService")
@@ -31,6 +33,9 @@ class UserDetailsServiceImpl implements UserDetailsService {
     @Autowired
     SecurityProperties securityProperties
 
+    @Autowired
+    PasswordEncoder passwordEncoder
+
     @Override
     UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 //      CHECK IF USER IS CONFIG USER
@@ -47,7 +52,7 @@ class UserDetailsServiceImpl implements UserDetailsService {
 
             return new User(
                     securityProperties.user.name,
-                    securityProperties.user.password,
+                    passwordEncoder.encode(securityProperties.user.password),
                     authorities
             )
         }
@@ -56,7 +61,7 @@ class UserDetailsServiceImpl implements UserDetailsService {
         def user = null
         user = userRepository.findByUsername(username)
         if (user == null)
-            throw new UsernameNotFoundException(username)
+            throw new UsernameNotFoundException("User ${username} not found!")
 
         def authorities = new ArrayList<GrantedAuthority>()
 

@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
+import java.security.Principal
+
 //TODO: add compose yml for postgres
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -20,7 +22,8 @@ class SecurityController {
 //    }
     @GetMapping("/user")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public String helloUser() {
+    public String helloUser(Principal principal) {
+        def h
         return "Hello User";
     }
 

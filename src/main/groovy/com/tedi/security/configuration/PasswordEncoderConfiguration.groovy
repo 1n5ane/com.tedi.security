@@ -10,6 +10,9 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder
 import org.springframework.security.crypto.password.NoOpPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder
+import org.springframework.security.crypto.password.StandardPasswordEncoder
+import org.springframework.security.crypto.scrypt.SCryptPasswordEncoder
 
 @Configuration
 class PasswordEncoderConfiguration {
@@ -29,5 +32,4 @@ class PasswordEncoderConfiguration {
     public PasswordEncoder delegatingPasswordEncoder(){
         return PasswordEncoderFactories.createDelegatingPasswordEncoder()
     }
-
 }
