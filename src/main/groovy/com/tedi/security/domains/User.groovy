@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 
 @Entity
 @Embeddable
@@ -65,6 +66,14 @@ class User extends org.springframework.security.core.userdetails.User{
         this.username = username
         this.password = password
     }
+
+    User(String username, String password, Collection<? extends GrantedAuthority> authorities, String email) {
+        super(username, password, authorities)
+        this.username = username
+        this.password = password
+        this.email = email
+    }
+
     User(Long id, String username, String password, Collection<? extends GrantedAuthority> authorities) {
         super(username, password, authorities)
         this.id = id
@@ -81,7 +90,7 @@ class User extends org.springframework.security.core.userdetails.User{
          String email,
          Boolean locked,
          Date createdAt,
-         Date updatedAt
+         Date updatedAt = null
     ) {
         super(username, password, !locked ,true,true,!locked,authorities)
         this.id = id
@@ -91,8 +100,6 @@ class User extends org.springframework.security.core.userdetails.User{
         this.lastName = lastname
         this.firstName = name
         this.locked = locked
-        this.updatedAt = null
-        this.locked = false
         this.createdAt = createdAt
         this.updatedAt = updatedAt
     }
@@ -111,8 +118,8 @@ class User extends org.springframework.security.core.userdetails.User{
         if (lastName != user.lastName) return false
         if (locked != user.locked) return false
         if (password != user.password) return false
-        if (updatedAt != user.updatedAt) return false
         if (username != user.username) return false
+        if (this.authorities != user.authorities) return false
 
         return true
     }
@@ -131,6 +138,7 @@ class User extends org.springframework.security.core.userdetails.User{
         return result
     }
 
+
     @Override
     public String toString() {
         return "User{" +
@@ -140,6 +148,7 @@ class User extends org.springframework.security.core.userdetails.User{
                 ", password='" + password + '\'' +
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
+                ", authorities='" + super.authorities + '\'' +
                 ", locked=" + locked +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +

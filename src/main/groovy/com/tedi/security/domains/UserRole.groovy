@@ -38,4 +38,15 @@ class UserRole {
                 ", role=" + role +
                 '}';
     }
+
+    boolean equals(o) {
+        if (this.is(o)) return true
+        if (o == null || getClass() != o.class) return false
+
+        UserRole userRole = (UserRole) o
+
+        if (id != userRole.id) return false
+
+        return true
+    }
 }

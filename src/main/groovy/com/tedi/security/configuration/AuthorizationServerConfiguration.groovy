@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.Customizer
@@ -35,6 +36,7 @@ class AuthorizationServerConfiguration {
                 .csrf().disable()
                 .authorizeHttpRequests((auth) -> auth
 //                permit all only on login/logout/register
+                        .requestMatchers(HttpMethod.POST,"/api/v1/auth/user").permitAll()
                         .requestMatchers("/api/v1/auth/**").fullyAuthenticated()
                         .anyRequest().authenticated()
                 )
