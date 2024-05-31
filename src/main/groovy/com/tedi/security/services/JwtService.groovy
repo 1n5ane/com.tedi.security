@@ -60,15 +60,17 @@ class JwtService {
 
     Boolean isTokenValid(String token, User user) {
         String username = null
+        Long userId = null
         def expired
         try {
             username = extractUsername(token)
+            userId = (Long) extractClaim(token, "userId", Long.class)
             expired = isTokenExpired(token)
         } catch (Exception e) {
             log.trace("Token '${token}' is not valid: ${e.getMessage()}")
             expired = true
         }
-        return (username == user.username && !expired)
+        return (username == user.username && userId == user.id && !expired)
     }
 
     private Boolean isTokenExpired(String token) {

@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.lang.NonNull
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
@@ -49,7 +50,16 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication()
 
             if (username != null && authentication == null) {
-                User user = userDetailsService.loadUserByUsername(username) as User
+
+                User user = null
+                try{
+                    user = userDetailsService.loadUserByUsername(username) as User
+                } catch(UsernameNotFoundException ignored){
+//                    if token is valid and username not found then there was some kind of update in users credentials by himself or by admin...
+//                    user will have to login again in case of username or email change!
+                    filterChain.doFilter(request, response)
+                    return
+                }
 
                 if (jwtService.isTokenValid(jwt, user)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities())
