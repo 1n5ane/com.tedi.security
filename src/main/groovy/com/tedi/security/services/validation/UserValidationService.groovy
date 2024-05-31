@@ -5,7 +5,6 @@ import com.tedi.security.utils.data.validation.exception.UserValidationException
 import groovy.util.logging.Slf4j
 import org.springframework.stereotype.Service
 
-//TODO: CHECK FOR INVALID CHARACTERS...
 @Service
 @Slf4j
 class UserValidationService implements ValidationService {

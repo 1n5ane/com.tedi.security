@@ -10,6 +10,8 @@ import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.crypto.password.PasswordEncoder
 
+//TODO: add id=0 (The db users should start from 1)
+
 @Primary
 @Configuration
 class UserSecurityProperties extends SecurityProperties {

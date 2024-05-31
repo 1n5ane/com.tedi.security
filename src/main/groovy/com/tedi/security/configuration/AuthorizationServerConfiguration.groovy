@@ -1,20 +1,21 @@
 package com.tedi.security.configuration
 
-import jakarta.annotation.PostConstruct
+import com.tedi.security.filters.JwtAuthenticationFilter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider
-import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 import javax.sql.DataSource
 
@@ -26,33 +27,39 @@ class AuthorizationServerConfiguration {
     @Autowired
     DataSource dataSource
 
+    @Autowired
+    JwtAuthenticationFilter jwtAuthenticationFilter
+
     @Bean
     @Autowired
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            AuthenticationProvider authenticationProvider) throws Exception {
         http
-//        CSRF DISABLED FOR DEVELOPMENT PURPOSES
-//        TODO: enable
-                .csrf().disable()
+//              disable csrf -> jwt token is used -> no cookies!
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(sessionManagement -> sessionManagement
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .authorizeHttpRequests((auth) -> auth
 //                permit all only on login/logout/register
-                        .requestMatchers(HttpMethod.POST,"/api/v1/auth/user").permitAll()
+//                      REGISTER -> permit all
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/user").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh_token").permitAll()
                         .requestMatchers("/api/v1/auth/**").fullyAuthenticated()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider)
-//                TODO: - implement JwtAuthenticationFiler utilizing corespondent JwtService(extends OncePerRequest....)
-//                .addFilterBefore(jwtAuthenticationFilter,
-//                                 UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 //              FORM LOGIN WILL NOT EXIST IN THE AUTHSERVER
-//              TODO: login page will be implemented on resource server
-                .formLogin (Customizer.withDefaults())
-                .httpBasic(Customizer.withDefaults())
+//              login page will be implemented on resource server
+                .formLogin(formLogin -> formLogin.disable())
+                .httpBasic(httpBasic -> httpBasic.disable())
         return http.build();
     }
 
     @Autowired
-    public void configure(AuthenticationManagerBuilder auth,PasswordEncoder passwordEncoder) throws Exception {
+    public void configure(AuthenticationManagerBuilder auth, PasswordEncoder passwordEncoder) throws Exception {
         auth.jdbcAuthentication()
                 .dataSource(dataSource)
                 .passwordEncoder(passwordEncoder)
@@ -68,7 +75,7 @@ class AuthorizationServerConfiguration {
     @Bean
     @Autowired
     public AuthenticationProvider configure(UserDetailsService userDetailsService,
-                                            PasswordEncoder passwordEncoder){
+                                            PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider()
         provider.setUserDetailsService(userDetailsService)
         provider.setPasswordEncoder(passwordEncoder)

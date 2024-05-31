@@ -44,6 +44,7 @@ class UserDetailsServiceImpl implements UserDetailsService {
     @Autowired
     PasswordEncoder passwordEncoder
 
+
     @Override
     UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
 //      CHECK IF USER IS CONFIG USER
@@ -271,7 +272,7 @@ class UserDetailsServiceImpl implements UserDetailsService {
         if (updatedUser != userToBeUpdated) {
             userRepository.save(updatedUser)
 //         Get all roles
-            List<Role> roleList = authorities.size() > 0 ? roleRepository.findAll() : null
+            List<Role> roleList = authorities?.size() > 0 ? roleRepository.findAll() : null
             //      update UserRoles (if changed)!
             authorities.each { authority ->
                 Role r = roleList.find { r -> r.name == authority }
@@ -296,7 +297,7 @@ class UserDetailsServiceImpl implements UserDetailsService {
                 }
                 updatedRolesSet.add(currentUserRole)
             }
-            if(authorities.size()>0){
+            if(authorities?.size()>0){
 //          delete roles that's not in the request
                 def rolesToDeleteList = userRoleSet - updatedRolesSet
                 rolesToDeleteList.each{userRole ->
