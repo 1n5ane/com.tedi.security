@@ -13,8 +13,6 @@ import org.springframework.security.core.Authentication
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.stereotype.Service
 
-//TODO: ADD LOGGING
-
 @Service
 @Slf4j
 class SecurityIntegrationService {
@@ -42,7 +40,7 @@ class SecurityIntegrationService {
     }
 
     def generateTokensFromRefreshToken(RefreshTokenDto refreshTokenDto) throws Exception {
-        if(refreshTokenDto.refreshToken==null || refreshTokenDto.refreshToken.isEmpty())
+        if (refreshTokenDto.refreshToken == null || refreshTokenDto.refreshToken.isEmpty())
             throw new IllegalArgumentException("No refresh token provided")
 //      Extract username (if token expired or invalid exception will be thrown)
         String username = jwtService.extractUsername(refreshTokenDto.refreshToken)
@@ -108,5 +106,27 @@ class SecurityIntegrationService {
         userDetailsService.deleteUser(userDto.id)
     }
 
-//  listAll users (for admin)
+    User findUser(Long id) throws Exception {
+        User user = userDetailsService.findUserById(id)
+        return user
+    }
+
+    def findAllUsers(Integer page, Integer pageSize, String sortBy, String order) throws Exception {
+        if(page<0) throw new IllegalArgumentException("Page number can't be negative!")
+        if(pageSize<=0) throw new IllegalArgumentException("Page size can't be negative or zero")
+        if(pageSize>100) throw new IllegalArgumentException("Page size can't be more than 100")
+        sortBy = sortBy.trim()
+        if(!["id","username","firstName","lastName","email","createdAt","updatedAt","locked"].contains(sortBy))
+            throw new IllegalArgumentException("SortBy can only be one of [id, username, firstName, lastName, email, createdAt, updatedAt, locked]")
+
+        order = order.trim()
+        if(!["asc", "desc"].contains(order))
+            throw new IllegalArgumentException("Order can only be 'asc' or 'desc'")
+
+        def users = userDetailsService.listAllUsers(page, pageSize, sortBy, order)
+        def userCount = userDetailsService.countAllUsers()
+        def totalPages = Math.ceil(userCount/pageSize) as Integer
+        def hasNextPage = page+1 < totalPages
+        return ["users":users, "hasNextPage": hasNextPage]
+    }
 }

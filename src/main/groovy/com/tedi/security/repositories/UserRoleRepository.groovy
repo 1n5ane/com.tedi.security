@@ -14,6 +14,9 @@ interface UserRoleRepository extends JpaRepository<UserRole, UserRoleKey>{
     @Query("select ur from UserRole ur where ur.id.userId=:userId")
     Set<UserRole> findByUserId(@Param("userId") Long id)
 
+    @Query("select ur from UserRole ur where ur.id.userId in :userIdList")
+    Set<UserRole> findByUserIdIn(@Param("userIdList") List<Long> userIdList)
+
     @Modifying
     @Query("delete from UserRole ur where ur.id.userId=:userId")
     void deleteAllRolesByUserId(@Param("userId") Long id)

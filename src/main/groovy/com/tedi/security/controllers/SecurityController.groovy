@@ -12,15 +12,21 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.Authentication
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 
-//TODO: add compose yml for postgres
+import java.time.format.DateTimeFormatter
+
+//TODO: - add compose yml for postgres
 @RestController
 @RequestMapping("/api/v1/auth")
 @Slf4j
@@ -28,6 +34,88 @@ class SecurityController {
 
     @Autowired
     SecurityIntegrationService securityIntegrationService
+
+    @Autowired
+    DateTimeFormatter dateTimeFormatter
+
+    @GetMapping(value = "/user/{id}", produces = "application/json;charset=UTF-8")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseBody
+    def getUser(@PathVariable("id") String id) {
+        def response = ["success": true,
+                        "user"   : null,
+                        "error"  : ""]
+        Long userId
+        def user = null
+        try {
+            userId = id.toLong()
+            user = securityIntegrationService.findUser(userId)
+            response["user"] = user ? ["id"        : user.id,
+                                       "username"  : user.username,
+                                       "name"      : user.firstName,
+                                       "surname"   : user.lastName,
+                                       "email"     : user.email,
+                                       "admin"     : user.authorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN")),
+                                       "locked"    : user.locked,
+                                       "created_at": user.createdAt ? dateTimeFormatter.format(user.createdAt.toInstant()) : null,
+                                       "updated_at": user.updatedAt ? dateTimeFormatter.format(user.updatedAt.toInstant()) : null] : null
+        } catch (NumberFormatException ignored) {
+            response["success"] = false
+            response["error"] = "Invalid Id"
+        } catch (Exception exception) {
+            log.error("Failed to get user with id ${id} : ${exception.getMessage()}")
+            response["success"] = false
+            response["error"] = "An error occured. Please try again later!"
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK)
+    }
+
+    @GetMapping(value = "/user", produces = "application/json;charset=UTF-8")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseBody
+    def listAllUsers(@RequestParam(name = "page", defaultValue = "0") Integer page,
+                     @RequestParam(name = "size", defaultValue = "15") Integer pageSize,
+                     @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
+                     @RequestParam(name = "order", defaultValue = "desc") String order) {
+        def response = ["success"    : true,
+                        "hasNextPage": false,
+                        "users"      : [],
+                        "error"      : ""]
+
+        List<User> users = null
+        try {
+            def usersRes = securityIntegrationService.findAllUsers(page, pageSize, sortBy, order)
+            users = usersRes["users"] as List<User>
+            Boolean hasNextPage = usersRes["hasNextPage"]
+            def retList = []
+            users.each { u ->
+                retList.add([
+                        "id"        : u.id,
+                        "username"  : u.username,
+                        "name"      : u.firstName,
+                        "surname"   : u.lastName,
+                        "email"     : u.email,
+                        "admin"     : u.authorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN")),
+                        "locked"    : u.locked,
+                        "created_at": u.createdAt ? dateTimeFormatter.format(u.createdAt.toInstant()) : null,
+                        "updated_at": u.updatedAt ? dateTimeFormatter.format(u.updatedAt.toInstant()) : null
+                ])
+                response["users"] = retList
+                response["hasNextPage"] = hasNextPage
+            }
+        } catch (IllegalArgumentException exception) {
+            log.error("Failed to list all users (page=${page},pageSize=${pageSize}): ${exception.getMessage()}")
+            response["success"] = false
+            response["error"] = exception.getMessage()
+        } catch (Exception exception) {
+            log.error("Failed to list all users (page=${page},pageSize=${pageSize}): ${exception.getMessage()}")
+            response["success"] = false
+            response["error"] = "An error occured. Please try again later!"
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK)
+    }
 
 
     @PostMapping(value = "/refresh_token", produces = "application/json;charset=UTF-8")
@@ -48,7 +136,7 @@ class SecurityController {
             response["refresh_token"] = tokens['refreshToken']
         } catch (IllegalArgumentException exception) {
             response["error"] = exception.getMessage()
-            return new ResponseEntity<>(response,HttpStatus.UNAUTHORIZED)
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED)
         } catch (Exception exception) {
             log.trace(exception.getMessage())
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED)
@@ -74,7 +162,7 @@ class SecurityController {
             response.error = exception.getMessage()
         }
         def retStatus = HttpStatus.OK
-        if(!response.success)
+        if (!response.success)
             retStatus = HttpStatus.UNAUTHORIZED
         return new ResponseEntity<>(response, retStatus)
     }

@@ -15,6 +15,9 @@ import org.springframework.security.crypto.password.PasswordEncoder
 @Primary
 @Configuration
 class UserSecurityProperties extends SecurityProperties {
+    @Value('${spring.security.user.id}')
+    Long id
+
     @Value('${spring.security.user.email}')
     String email
 
@@ -30,6 +33,6 @@ class UserSecurityProperties extends SecurityProperties {
                         new SimpleGrantedAuthority(role)
                 )
         }
-        return new MyUser(u.name, passwordEncoder.encode(u.password), authorities, email)
+        return new MyUser(id, u.name, passwordEncoder.encode(u.password), authorities, "Config User", "Config User", email, false, null)
     }
 }

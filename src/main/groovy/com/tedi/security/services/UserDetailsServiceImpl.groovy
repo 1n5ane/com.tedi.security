@@ -15,6 +15,10 @@ import jakarta.transaction.Transactional
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
@@ -122,6 +126,73 @@ class UserDetailsServiceImpl implements UserDetailsService {
                 user.createdAt,
                 user.updatedAt)
 
+    }
+
+    User findUserById(Long id) {
+        def securityPropertiesUser = securityProperties.getUserDetails()
+        if (securityPropertiesUser.id == id) {
+            return securityPropertiesUser
+        }
+
+        def user = userRepository.findById(id)
+
+        if (user.isEmpty())
+            return null
+        user = user.get()
+        def userRolesSet = userRoleRepository.findByUserId(id)
+        def authorities = createUserGrantedAuthorities(userRolesSet)
+
+        return new User(user.id,
+                user.username,
+                user.password,
+                authorities,
+                user.firstName,
+                user.lastName,
+                user.email,
+                user.locked,
+                user.createdAt,
+                user.updatedAt)
+    }
+
+    List<User> listAllUsers(Integer page, Integer pageSize, String sortBy, String order) {
+        List<User> users = []
+        Sort.Direction direction = Sort.Direction.DESC
+        if (order == "asc")
+            direction = Sort.Direction.ASC
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(direction, sortBy))
+        Page<User> pageUser = userRepository.findAll(pageable)
+        users = pageUser.getContent()
+        def userIdList = []
+        users.each { u ->
+            userIdList.add(u.id)
+        }
+
+        def userRolesSet = userRoleRepository.findByUserIdIn(userIdList)
+        def resultUsers = []
+        users.each { user ->
+            def currentUserRoles = userRolesSet.findAll { userRole ->
+                userRole.id.userId == user.id
+            }
+
+            def currentUserGrantedAuthorities = createUserGrantedAuthorities(currentUserRoles)
+            resultUsers.add(new User(user.id,
+                    user.username,
+                    user.password,
+                    currentUserGrantedAuthorities,
+                    user.firstName,
+                    user.lastName,
+                    user.email,
+                    user.locked,
+                    user.createdAt,
+                    user.updatedAt))
+        }
+
+        return resultUsers
+
+    }
+
+    Long countAllUsers() {
+        return userRepository.count()
     }
 
     @Transactional
@@ -297,10 +368,10 @@ class UserDetailsServiceImpl implements UserDetailsService {
                 }
                 updatedRolesSet.add(currentUserRole)
             }
-            if(authorities?.size()>0){
+            if (authorities?.size() > 0) {
 //          delete roles that's not in the request
                 def rolesToDeleteList = userRoleSet - updatedRolesSet
-                rolesToDeleteList.each{userRole ->
+                rolesToDeleteList.each { userRole ->
                     userRoleRepository.delete(userRole)
                 }
 
@@ -313,7 +384,7 @@ class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     @Transactional
-    void deleteUser(String id){
+    void deleteUser(String id) {
         userRepository.deleteById(id.toLong())
         userRoleRepository.deleteAllRolesByUserId(id.toLong())
     }
