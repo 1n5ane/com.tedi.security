@@ -1,5 +1,6 @@
 package com.tedi.security.configuration
 
+import com.tedi.security.configuration.properties.ServerProperties
 import com.tedi.security.filters.JwtAuthenticationFilter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
@@ -16,7 +17,6 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
-
 import javax.sql.DataSource
 
 @Configuration
@@ -30,6 +30,9 @@ class AuthorizationServerConfiguration {
     @Autowired
     JwtAuthenticationFilter jwtAuthenticationFilter
 
+    @Autowired
+    ServerProperties serverProperties
+
     @Bean
     @Autowired
     public SecurityFilterChain filterChain(HttpSecurity http,
@@ -41,8 +44,8 @@ class AuthorizationServerConfiguration {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests((auth) -> auth
-//                permit all only on login/logout/register
-//                      REGISTER -> permit all
+//                permit all only on login/logout/register and MetadataConfiguration
+                        .requestMatchers("/.well-known/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/user").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh_token").permitAll()
@@ -55,7 +58,7 @@ class AuthorizationServerConfiguration {
 //              login page will be implemented on resource server
                 .formLogin(formLogin -> formLogin.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
-        return http.build();
+        return http.build()
     }
 
     @Autowired

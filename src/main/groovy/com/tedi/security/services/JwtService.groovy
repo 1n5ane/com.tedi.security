@@ -12,8 +12,8 @@ import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
-import java.security.Key
-import java.util.function.Function
+import java.security.PrivateKey
+import java.security.PublicKey
 
 @Service
 @Slf4j
@@ -35,7 +35,18 @@ class JwtService {
     }
 
     String generateToken(User user) {
-        return generateToken(["userId": user.id], user)
+        def authorityStringList = []
+        user.authorities.each { authority ->
+            authorityStringList.add(authority.toString())
+        }
+        def extraClaims = [
+                "userId"     : user.id,
+                "name"       : user.firstName,
+                "surname"    : user.lastName,
+                "email"      : user.email,
+                "authorities": authorityStringList
+        ]
+        return generateToken(extraClaims, user)
     }
 
     String generateRefreshToken(User user) {
@@ -54,7 +65,7 @@ class JwtService {
                 .setIssuer(serverProperties.getServerUrl())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .signWith(getPrivateKey())
                 .compact()
     }
 
@@ -84,14 +95,17 @@ class JwtService {
     private Claims extractAllClaims(String token) {
         return Jwts
                 .parserBuilder()
-                .setSigningKey(getSignInKey())
+                .setSigningKey(getPublicKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
     }
 
-    private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtConfiguration.secret);
-        return Keys.hmacShaKeyFor(keyBytes);
+    private PrivateKey getPrivateKey() {
+        return jwtConfiguration.keyPair.getPrivate()
+    }
+
+    public PublicKey getPublicKey() {
+        return jwtConfiguration.keyPair.getPublic()
     }
 }
