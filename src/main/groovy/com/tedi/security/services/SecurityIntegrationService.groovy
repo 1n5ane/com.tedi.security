@@ -11,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
 
 @Service
@@ -64,6 +65,30 @@ class SecurityIntegrationService {
         log.info("Successfully created user: ${dbUser}")
     }
 
+    Boolean checkUserExistsByUsernameOrEmail(String username,String email) throws Exception {
+        //load user by username checks for username or email!
+        def exists = null
+        if(username && !username.isEmpty()) {
+            try {
+                userDetailsService.loadUserByUsername(username)
+                return true
+            } catch (UsernameNotFoundException ignored) {
+                exists = false
+            }
+        }
+
+        if(email && !email.isEmpty()) {
+            try {
+                userDetailsService.loadUserByUsername(email)
+                return true
+            } catch (UsernameNotFoundException ignored) {
+                exists = false
+            }
+        }
+
+        return exists
+    }
+
     void updateUser(UserDto user, Authentication authentication) throws Exception {
 //      TODO: Fill empty user fields from authentication (for partial update - only send fields to update)
 //      validate provided user details
@@ -81,7 +106,7 @@ class SecurityIntegrationService {
 //      if role admin and no id provided update admin/own details
             user.id = (authentication.getPrincipal() as User).id
         }
-        if(!user.locked){
+        if (!user.locked) {
             user.locked = (authentication.getPrincipal() as User).locked
         }
         def updatedUser = userDetailsService.updateUser(user.id, user.username,
@@ -113,21 +138,21 @@ class SecurityIntegrationService {
     }
 
     def findAllUsers(Integer page, Integer pageSize, String sortBy, String order) throws Exception {
-        if(page<0) throw new IllegalArgumentException("Page number can't be negative!")
-        if(pageSize<=0) throw new IllegalArgumentException("Page size can't be negative or zero")
-        if(pageSize>100) throw new IllegalArgumentException("Page size can't be more than 100")
+        if (page < 0) throw new IllegalArgumentException("Page number can't be negative!")
+        if (pageSize <= 0) throw new IllegalArgumentException("Page size can't be negative or zero")
+        if (pageSize > 100) throw new IllegalArgumentException("Page size can't be more than 100")
         sortBy = sortBy.trim()
-        if(!["id","username","firstName","lastName","email","createdAt","updatedAt","locked"].contains(sortBy))
+        if (!["id", "username", "firstName", "lastName", "email", "createdAt", "updatedAt", "locked"].contains(sortBy))
             throw new IllegalArgumentException("SortBy can only be one of [id, username, firstName, lastName, email, createdAt, updatedAt, locked]")
 
         order = order.trim()
-        if(!["asc", "desc"].contains(order))
+        if (!["asc", "desc"].contains(order))
             throw new IllegalArgumentException("Order can only be 'asc' or 'desc'")
 
         def users = userDetailsService.listAllUsers(page, pageSize, sortBy, order)
         def userCount = userDetailsService.countAllUsers()
-        def totalPages = Math.ceil(userCount/pageSize) as Integer
-        def hasNextPage = page+1 < totalPages
-        return ["users":users, "hasNextPage": hasNextPage]
+        def totalPages = Math.ceil(userCount / pageSize) as Integer
+        def hasNextPage = page + 1 < totalPages
+        return ["users": users, "hasNextPage": hasNextPage]
     }
 }

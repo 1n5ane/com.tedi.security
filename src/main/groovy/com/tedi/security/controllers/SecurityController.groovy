@@ -5,6 +5,7 @@ import com.tedi.security.dtos.LoginDto
 import com.tedi.security.dtos.RefreshTokenDto
 import com.tedi.security.dtos.UserDto
 import com.tedi.security.services.SecurityIntegrationService
+import com.tedi.security.utils.data.validation.exception.UserValidationException
 import com.tedi.security.utils.data.validation.exception.ValidationException
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
@@ -212,5 +213,32 @@ class SecurityController {
         return new ResponseEntity<>(response, HttpStatus.OK)
     }
 
+
+    @GetMapping(value = "/user/exists", produces = "application/json;charset=UTF-8")
+    @ResponseBody
+    def checkUserExists(@RequestParam(required = false, name = "username") String username,
+                        @RequestParam(required = false, name = "email") String email){
+        def response = ["success": true,
+                        "exists" : false,
+                        "error"  : ""]
+        if(!username && !email){
+            response["success"] = false
+            response["exists"] = null
+            response["error"] = "No username or email provided!"
+            return new ResponseEntity<>(response, HttpStatus.OK)
+        }
+
+        Boolean exists = null
+        def error = ""
+        try {
+            exists = securityIntegrationService.checkUserExistsByUsernameOrEmail(username, email)
+        }catch(Exception e){
+            error = e.getMessage()
+        }
+        response["error"] = error
+        response["exists"] = exists
+        return new ResponseEntity<>(response, HttpStatus.OK)
+
+    }
 
 }

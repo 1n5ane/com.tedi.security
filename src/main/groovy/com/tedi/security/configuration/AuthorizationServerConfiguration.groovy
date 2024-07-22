@@ -46,6 +46,7 @@ class AuthorizationServerConfiguration {
                 .authorizeHttpRequests((auth) -> auth
 //                permit all only on login/logout/register and MetadataConfiguration
                         .requestMatchers("/.well-known/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/user/exists").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/user").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh_token").permitAll()
