@@ -11,7 +11,6 @@ import com.tedi.security.repositories.UserRoleRepository
 import com.tedi.security.utils.data.validation.exception.UserEmailExistsException
 import com.tedi.security.utils.data.validation.exception.UserRoleNotExistsException
 import com.tedi.security.utils.data.validation.exception.UserUsernameExistsException
-import jakarta.transaction.Transactional
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -26,6 +25,7 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 import java.text.SimpleDateFormat
 
@@ -195,7 +195,7 @@ class UserDetailsServiceImpl implements UserDetailsService {
         return userRepository.count()
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     User createUser(String username,
                     String email,
                     String password,
@@ -258,7 +258,7 @@ class UserDetailsServiceImpl implements UserDetailsService {
     }
 
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     User updateUser(String id,
                     String username,
                     String email,
@@ -294,7 +294,8 @@ class UserDetailsServiceImpl implements UserDetailsService {
         )
 
 //      if user changed username -> need to check for uniqueness
-        if (userToBeUpdated.username != username) {
+        def fieldIsEmpty = (username == null || username.isEmpty())
+        if (!fieldIsEmpty && userToBeUpdated.username != username) {
             def u = userRepository.findByUsername(username)
             if (u != null) {
                 logger.error("Can't update users current username" +
@@ -304,7 +305,8 @@ class UserDetailsServiceImpl implements UserDetailsService {
         }
 
 //      if user changes email -> need to check for uniqueness
-        if (userToBeUpdated.email != email) {
+        fieldIsEmpty = (email == null || email.isEmpty())
+        if (!fieldIsEmpty && userToBeUpdated.email != email) {
             def u = userRepository.findByEmail(email)
             if (u != null) {
                 logger.error("Can't update users current email" +
@@ -317,11 +319,12 @@ class UserDetailsServiceImpl implements UserDetailsService {
 //      because if user makes no changes to his details,
 //      passwordEncoder generates a different hash every time
 //      so unnecessary updates will be done
-        if (passwordEncoder.matches(password, userToBeUpdated.password))
+        fieldIsEmpty = (password == null || password.isEmpty())
+        if (fieldIsEmpty || passwordEncoder.matches(password, userToBeUpdated.password)) {
             password = userToBeUpdated.password
-        else
+        } else {
             password = passwordEncoder.encode(password)
-
+        }
         Date updatedDate = new Date()
 
         def userAuthoritiesList = []
@@ -383,7 +386,7 @@ class UserDetailsServiceImpl implements UserDetailsService {
         return null
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     void deleteUser(String id) {
         userRepository.deleteById(id.toLong())
         userRoleRepository.deleteAllRolesByUserId(id.toLong())

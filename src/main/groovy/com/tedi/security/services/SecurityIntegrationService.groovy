@@ -4,6 +4,7 @@ import com.tedi.security.domains.User
 import com.tedi.security.dtos.LoginDto
 import com.tedi.security.dtos.RefreshTokenDto
 import com.tedi.security.dtos.UserDto
+import com.tedi.security.services.validation.UserValidationService
 import com.tedi.security.services.validation.ValidationService
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
@@ -92,7 +93,7 @@ class SecurityIntegrationService {
     void updateUser(UserDto user, Authentication authentication) throws Exception {
 //      TODO: Fill empty user fields from authentication (for partial update - only send fields to update)
 //      validate provided user details
-        validationServiceMap["userValidationService"].validate(user)
+        (validationServiceMap["userValidationService"] as UserValidationService).validateUserUpdate(user)
 
         def currentLoggedInUserAuthorities = authentication.getAuthorities()
 
