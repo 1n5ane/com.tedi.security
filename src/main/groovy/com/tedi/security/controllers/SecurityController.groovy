@@ -38,6 +38,45 @@ class SecurityController {
     @Autowired
     DateTimeFormatter dateTimeFormatter
 
+    @GetMapping(value = "/user/search", produces = "application/json;charset=UTF-8")
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
+    @ResponseBody
+    // if currentLoggedIn user is admin -> return everything
+    // if currentLoggedIn user is just user -> just return id
+    def searchUserByUsername(@RequestParam(name = "username") String username, Authentication authentication) {
+        def response = ["success": true,
+                        "user"   : null,
+                        "error"  : ""]
+        Long userId
+        def user = null
+        try {
+            user = securityIntegrationService.findUser(username)
+            if (authentication.getAuthorities().contains('ROLE_ADMIN')) {
+                response["user"] = user ? ["id"        : user.id,
+                                           "username"  : user.username,
+                                           "name"      : user.firstName,
+                                           "surname"   : user.lastName,
+                                           "email"     : user.email,
+                                           "admin"     : user.authorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN")),
+                                           "locked"    : user.locked,
+                                           "created_at": user.createdAt ? dateTimeFormatter.format(user.createdAt.toInstant()) : null,
+                                           "updated_at": user.updatedAt ? dateTimeFormatter.format(user.updatedAt.toInstant()) : null] : null
+            } else {
+                //user is not admin -> just return id
+                response["user"] = user ? [
+                        "id"      : user.id,
+                        "username": username
+                ] : null
+            }
+        } catch (Exception exception) {
+            log.error("Failed to get user with username ${username} : ${exception.getMessage()}")
+            response["success"] = false
+            response["error"] = "An error occured. Please try again later!"
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK)
+    }
+
     @GetMapping(value = "/user/{id}", produces = "application/json;charset=UTF-8")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseBody
@@ -101,9 +140,10 @@ class SecurityController {
                         "created_at": u.createdAt ? dateTimeFormatter.format(u.createdAt.toInstant()) : null,
                         "updated_at": u.updatedAt ? dateTimeFormatter.format(u.updatedAt.toInstant()) : null
                 ])
-                response["users"] = retList
-                response["hasNextPage"] = hasNextPage
             }
+            response["users"] = retList
+            response["hasNextPage"] = hasNextPage
+            response["totalPages"] = usersRes["totalPages"] as Integer
         } catch (IllegalArgumentException exception) {
             log.error("Failed to list all users (page=${page},pageSize=${pageSize}): ${exception.getMessage()}")
             response["success"] = false
@@ -217,11 +257,11 @@ class SecurityController {
     @GetMapping(value = "/user/exists", produces = "application/json;charset=UTF-8")
     @ResponseBody
     def checkUserExists(@RequestParam(required = false, name = "username") String username,
-                        @RequestParam(required = false, name = "email") String email){
+                        @RequestParam(required = false, name = "email") String email) {
         def response = ["success": true,
                         "exists" : false,
                         "error"  : ""]
-        if(!username && !email){
+        if (!username && !email) {
             response["success"] = false
             response["exists"] = null
             response["error"] = "No username or email provided!"
@@ -232,7 +272,7 @@ class SecurityController {
         def error = ""
         try {
             exists = securityIntegrationService.checkUserExistsByUsernameOrEmail(username, email)
-        }catch(Exception e){
+        } catch (Exception e) {
             error = e.getMessage()
         }
         response["error"] = error

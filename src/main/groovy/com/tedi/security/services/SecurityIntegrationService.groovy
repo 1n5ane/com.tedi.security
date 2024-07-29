@@ -138,6 +138,11 @@ class SecurityIntegrationService {
         return user
     }
 
+    User findUser(String username) throws Exception {
+        User user = userDetailsService.findUserByUsername(username)
+        return user
+    }
+
     def findAllUsers(Integer page, Integer pageSize, String sortBy, String order) throws Exception {
         if (page < 0) throw new IllegalArgumentException("Page number can't be negative!")
         if (pageSize <= 0) throw new IllegalArgumentException("Page size can't be negative or zero")
@@ -154,6 +159,6 @@ class SecurityIntegrationService {
         def userCount = userDetailsService.countAllUsers()
         def totalPages = Math.ceil(userCount / pageSize) as Integer
         def hasNextPage = page + 1 < totalPages
-        return ["users": users, "hasNextPage": hasNextPage]
+        return ["users": users, "hasNextPage": hasNextPage, "totalPages": totalPages]
     }
 }
