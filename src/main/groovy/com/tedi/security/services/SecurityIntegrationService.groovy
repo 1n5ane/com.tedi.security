@@ -107,9 +107,7 @@ class SecurityIntegrationService {
 //      if role admin and no id provided update admin/own details
             user.id = (authentication.getPrincipal() as User).id
         }
-        if (!user.locked) {
-            user.locked = (authentication.getPrincipal() as User).locked
-        }
+
         def updatedUser = userDetailsService.updateUser(user.id, user.username,
                 user.email,
                 user.password,
