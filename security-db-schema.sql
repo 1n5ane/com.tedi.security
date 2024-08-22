@@ -102,5 +102,3 @@ USING btree
 -- ddl-end --
 
 insert into roles (name) values ('ROLE_USER'),('ROLE_ADMIN');
-SET TIME ZONE 'UTC-3';
-
