@@ -13,7 +13,6 @@ class WebConfiguration implements WebMvcConfigurer {
         configurer.setUseTrailingSlashMatch(true)
     }
 
-    //not working
     @Override
     void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
