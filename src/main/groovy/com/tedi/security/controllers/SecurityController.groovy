@@ -235,6 +235,10 @@ class SecurityController {
             response.success = false
             response.error = exception.getMessage()
             log.warn("Failed to update user: ${response.error}")
+        } catch (Exception exception) {
+            response.success = false
+            response.error = exception.getMessage()
+            log.warn("Failed to update user: ${response.error}")
         }
         return new ResponseEntity<>(response, HttpStatus.OK)
     }

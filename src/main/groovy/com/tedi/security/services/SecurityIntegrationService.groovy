@@ -66,10 +66,10 @@ class SecurityIntegrationService {
         log.info("Successfully created user: ${dbUser}")
     }
 
-    Boolean checkUserExistsByUsernameOrEmail(String username,String email) throws Exception {
+    Boolean checkUserExistsByUsernameOrEmail(String username, String email) throws Exception {
         //load user by username checks for username or email!
         def exists = null
-        if(username && !username.isEmpty()) {
+        if (username && !username.isEmpty()) {
             try {
                 userDetailsService.loadUserByUsername(username)
                 return true
@@ -78,7 +78,7 @@ class SecurityIntegrationService {
             }
         }
 
-        if(email && !email.isEmpty()) {
+        if (email && !email.isEmpty()) {
             try {
                 userDetailsService.loadUserByUsername(email)
                 return true
@@ -100,6 +100,10 @@ class SecurityIntegrationService {
 //      if role user
         if (!currentLoggedInUserAuthorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
 //          user only updates himself
+            if (user.id != null && user.id.toLong() != (authentication.getPrincipal() as User).id) {
+                //if user not admin tries to update other users details
+                throw new Exception("User can only update his own details")
+            }
             user.id = (authentication.getPrincipal() as User).id
 //          throw away authorities that may exist in request -> user can't update his autorities
             user.authorities = ['ROLE_USER']
