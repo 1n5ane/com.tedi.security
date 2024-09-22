@@ -52,6 +52,7 @@ class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
 //      CHECK IF USER IS CONFIG USER
+        usernameOrEmail = usernameOrEmail.toLowerCase()
         def securityPropertiesUser = securityProperties.getUserDetails()
         if (securityPropertiesUser.username == usernameOrEmail || securityPropertiesUser.email == usernameOrEmail) {
             return securityPropertiesUser
@@ -85,6 +86,7 @@ class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     User findUserByEmail(String email) throws Exception {
+        email = email.toLowerCase()
         def user = userRepository.findByEmail(email)
         if (user == null)
             return user
@@ -106,6 +108,7 @@ class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     User findUserByUsername(String username) throws Exception {
+        username = username.toLowerCase()
 //      Only CHECK DB FOR USER -> no config user
         def user = userRepository.findByUsername(username)
 
@@ -205,6 +208,8 @@ class UserDetailsServiceImpl implements UserDetailsService {
                     Boolean locked = Boolean.FALSE,
                     Date updated = null) throws Exception {
 
+        username = username.toLowerCase()
+        email = email.toLowerCase()
 
         password = passwordEncoder.encode(password)
 
@@ -267,6 +272,9 @@ class UserDetailsServiceImpl implements UserDetailsService {
                     String lastName,
                     ArrayList<String> authorities = ["ROLE_USER"],
                     Boolean locked = Boolean.FALSE) throws Exception {
+
+        username = username.toLowerCase()
+        email = email.toLowerCase()
 
 //      fetch old user (using id)
         def userToBeUpdated = userRepository.findById(id.toLong())

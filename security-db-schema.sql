@@ -9,10 +9,10 @@
 -- 
 -- object: main | type: DATABASE --
 -- DROP DATABASE IF EXISTS main;
-CREATE DATABASE main;
+-- CREATE DATABASE main;
 -- ddl-end --
-
-
+CREATE DATABASE main;
+\connect main;
 -- object: public.users_id_seq | type: SEQUENCE --
 -- DROP SEQUENCE IF EXISTS public.users_id_seq CASCADE;
 CREATE SEQUENCE public.users_id_seq
