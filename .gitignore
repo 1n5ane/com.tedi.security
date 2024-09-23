@@ -6,7 +6,8 @@ build/
 !**/src/test/**/build/
 
 config/
-
+src/main/resources
+ssl/
 ### STS ###
 .apt_generated
 .classpath

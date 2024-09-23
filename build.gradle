@@ -25,12 +25,21 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-authorization-server'
+    implementation 'org.springframework.security:spring-security-oauth2-authorization-server'
     implementation 'org.apache.groovy:groovy'
+    implementation 'org.postgresql:postgresql'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'org.hibernate.validator:hibernate-validator'
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
-
-tasks.named('test') {
-    useJUnitPlatform()
-}
+//
+//tasks.named('test') {
+//    useJUnitPlatform()
+//}
